@@ -34,6 +34,7 @@ const deleteUser = catchAsync(async (req, res, next) => {
 });
 
 const getAllUser = catchAsync(async (req, res, next) => {
+  console.log(req.user)
   const users = await prisma.user.findMany();
 
   res.status(200).json({
@@ -41,6 +42,14 @@ const getAllUser = catchAsync(async (req, res, next) => {
     users,
   });
 });
+
+const deleteAllUser = catchAsync(async(req, res, next) => {
+  await prisma.user.deleteMany()
+
+  res.status(200).json({
+    data: null
+  })
+})
 
 const getUser = catchAsync(async (req, res, next) => {
   const id = req.params.id * 1;
@@ -85,4 +94,5 @@ export default {
   getAllUser,
   getUser,
   updateUser,
+  deleteAllUser,
 };

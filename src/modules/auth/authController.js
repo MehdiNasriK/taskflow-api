@@ -34,7 +34,6 @@ const signUp = catchAsync(async (req, res, next) => {
 
 const login = catchAsync(async (req, res, next) => {
   // find user with username and password
-  console.log(req.body);
   const { username, password } = req.body;
   if (!username || !password)
     return next(new Error("username and password required"));
@@ -95,20 +94,94 @@ const login = catchAsync(async (req, res, next) => {
   });
 });
 
-const protect = catchAsync(async(req, res, next)=> {
-  const token = req.headers.authorization?.split(' ')[1]
-  if(!token) return next(new Error("please login"))
+const protect = catchAsync(async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return next(new Error("please login"));
 
-  const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET)
- 
+  const { userInfo } = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userInfo.id,
+    },
+  });
+
+  req.user = user;
+  next();
+});
+
+const restrictTo = (role) => {
+  return catchAsync(async (req, res, next) => {
+    req.user.role === role
+      ? next()
+      : next(new Error("you are not access to this"));
+  });
+};
+
+const resetPassword = catchAsync(async (req, res, next) => {
+  const { password, newPassword } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.id,
+    },
+  });
+
+  if (!(await bcrypt.compare(password, user.password)))
+    return next(new Error("password incorrect"));
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "your password change successfully",
+  });
+});
+
+const refresh = catchAsync(async (req, res, next) => {
+  const refreshToken = req.cookies.jwt;
+  if (!refreshToken) return next(new Error("please login"));
+
+  const decoded = jwt.verify(
+    refreshToken,
+    process.env.JWT_REFRESH_TOKEN_SECRET,
+  );
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: decoded.id,
+    },
+  });
+
+  const accessToken = jwt.sign(
+    {
+      userInfo: {
+        id: user.id,
+        username: user.username,
+      },
+    },
+    process.env.JWT_REFRESH_TOKEN_SECRET,
+  );
+
   res.json({
-    decoded,
-  })
-
-})
+    accessToken,
+  });
+});
 
 export default {
   signUp,
   login,
   protect,
+  restrictTo,
+  resetPassword,
+  refresh,
 };

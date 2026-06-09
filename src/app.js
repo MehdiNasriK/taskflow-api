@@ -11,17 +11,20 @@ app.use(cookieParser());
 app
   .route("/users")
   .get(userController.getAllUser)
-  .post(userController.creatUser);
+  .post(userController.creatUser)
+  .delete(userController.deleteAllUser);
 app
   .route("/users/:id")
   .get(userController.getUser)
-  .delete(userController.deleteUser)
+  .delete(authController.protect, authController.restrictTo("ADMIN"), userController.deleteUser)
   .patch(userController.updateUser);
 
 app.route("/signup").post(authController.signUp);
 app.route("/login").post(authController.login);
 
-app.route('/pro').get(authController.protect)
+app.route("/resetpassword").post(authController.protect, authController.resetPassword);
+
+app.route("/cookie").get(authController.refresh)
 
 app.use(globalErrorHandeller);
 

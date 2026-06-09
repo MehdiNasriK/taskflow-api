@@ -26,6 +26,7 @@ model User {
   createdAt     DateTime    @default(now())
   updateAt      DateTime    @updatedAt
   token         String?
+  role          Role        @default(EMPLOYEE)
 }
 
 model Task {
@@ -88,4 +89,10 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  ADMIN
 }
