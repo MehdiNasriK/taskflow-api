@@ -1,13 +1,13 @@
-import { PrismaClient } from "../../generated/prisma/index.js";
+import { PrismaClient } from "@prisma/client";
 import catchAsync from "../../shared/utils/catchAsync.js";
 
 const prisma = new PrismaClient();
 
 const creatUser = catchAsync(async (req, res, next) => {
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
   const user = await prisma.user.create({
     data: {
-      name,
+      username,
       email,
       password,
     },

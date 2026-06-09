@@ -5,7 +5,7 @@ export default class Email {
     this.to = user.email;
     this.url = url;
     this.from = "company@gmail.com";
-    this.firstName = user.name.split(" ")[0];
+    this.firstName = user.username;
   }
 
   newTransport() {
