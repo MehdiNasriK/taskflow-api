@@ -25,7 +25,7 @@ model User {
   comments      Comment[]
   createdAt     DateTime    @default(now())
   updateAt      DateTime    @updatedAt
-  token         String?
+  refreshToken  String?
   role          Role        @default(EMPLOYEE)
 }
 

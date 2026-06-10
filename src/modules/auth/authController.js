@@ -1,13 +1,9 @@
-import { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
+import prisma from "../../shared/config/prisma.js";
+import jwt from "../../shared/utils/jwt.js";
 import catchAsync from "../../shared/utils/catchAsync.js";
 import bcrypt from "bcrypt";
 import Email from "../../shared/utils/email.js";
-import { userInfo } from "node:os";
-import crypto from "crypto";
-import async from "../../shared/utils/catchAsync.js";
 
-const prisma = new PrismaClient();
 
 const signUp = catchAsync(async (req, res, next) => {
   const { email, username } = req.body;
@@ -33,7 +29,6 @@ const signUp = catchAsync(async (req, res, next) => {
 });
 
 const login = catchAsync(async (req, res, next) => {
-  // find user with username and password
   const { username, password } = req.body;
   if (!username || !password)
     return next(new Error("username and password required"));
@@ -44,29 +39,12 @@ const login = catchAsync(async (req, res, next) => {
     },
   });
 
-  // password check
   if (!user || !(await bcrypt.compare(password, user.password)))
     return next(new Error("invalid password or username"));
 
-  // create access token and refresh token
-  const accessToken = jwt.sign(
-    {
-      userInfo: {
-        id: user.id,
-        username: user.username,
-      },
-    },
-    process.env.JWT_ACCESS_TOKEN_SECRET,
-    { expiresIn: `${process.env.ACCESS_TOKEN_EXPIRES}` },
-  );
+  const accessToken = jwt.createAccessToken(user.id, user.username);
+  const refreshToken = jwt.createRefreshToken(user.id);
 
-  const refreshToken = jwt.sign(
-    { id: user.id },
-    process.env.JWT_REFRESH_TOKEN_SECRET,
-    { expiresIn: `${process.env.REFRESH_TOKEN_EXPIRES}` },
-  );
-
-  // set refresh token as cookie and send access token in json format
   res.cookie("jwt", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -74,17 +52,14 @@ const login = catchAsync(async (req, res, next) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(refreshToken)
-    .digest("hex");
+  const hashedToken = jwt.hashRefreshToken(refreshToken);
 
   await prisma.user.update({
     where: {
       username,
     },
     data: {
-      token: hashedToken,
+      refreshToken: hashedToken,
     },
   });
 
@@ -94,11 +69,36 @@ const login = catchAsync(async (req, res, next) => {
   });
 });
 
-const protect = catchAsync(async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return next(new Error("please login"));
+const logout = catchAsync(async (req, res, next) => {
+  await prisma.user.update({
+    where: {
+      id: req.user.id,
+    },
+    data: {
+      refreshToken: null,
+    },
+  });
 
-  const { userInfo } = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.json({
+    status: "success",
+    message: "bye for now. see you later",
+  });
+});
+
+const protect = catchAsync(async (req, res, next) => {
+  if (!req.headers.authorization?.startsWith("Bearer"))
+    return next(new Error("invalid token"));
+
+  const accessToken = req.headers.authorization?.split(" ")[1];
+  if (!accessToken) return next(new Error("please login"));
+
+  const { userInfo } = jwt.checkAccessToken(accessToken);
 
   const user = await prisma.user.findUnique({
     where: {
@@ -110,12 +110,12 @@ const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-const restrictTo = (role) => {
-  return catchAsync(async (req, res, next) => {
-    req.user.role === role
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    return roles.includes(req.user.role)
       ? next()
       : next(new Error("you are not access to this"));
-  });
+  };
 };
 
 const resetPassword = catchAsync(async (req, res, next) => {
@@ -138,7 +138,14 @@ const resetPassword = catchAsync(async (req, res, next) => {
     },
     data: {
       password: hashedPassword,
+      refreshToken: null,
     },
+  });
+
+  res.clearCookie("jwt", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
   });
 
   res.status(200).json({
@@ -148,13 +155,10 @@ const resetPassword = catchAsync(async (req, res, next) => {
 });
 
 const refresh = catchAsync(async (req, res, next) => {
-  const refreshToken = req.cookies.jwt;
+  let refreshToken = req.cookies.jwt;
   if (!refreshToken) return next(new Error("please login"));
 
-  const decoded = jwt.verify(
-    refreshToken,
-    process.env.JWT_REFRESH_TOKEN_SECRET,
-  );
+  const decoded = jwt.checkRefreshToken(refreshToken);
 
   const user = await prisma.user.findUnique({
     where: {
@@ -162,15 +166,28 @@ const refresh = catchAsync(async (req, res, next) => {
     },
   });
 
-  const accessToken = jwt.sign(
-    {
-      userInfo: {
-        id: user.id,
-        username: user.username,
-      },
+  if (jwt.hashRefreshToken(refreshToken) !== user.refreshToken)
+    return next(new Error("token invalid"));
+
+  refreshToken = jwt.createRefreshToken(user.id);
+  const accessToken = jwt.createAccessToken(user.id, user.username);
+  const hashedToken = jwt.hashRefreshToken(refreshToken);
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
     },
-    process.env.JWT_REFRESH_TOKEN_SECRET,
-  );
+    data: {
+      refreshToken: hashedToken,
+    },
+  });
+
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
   res.json({
     accessToken,
@@ -184,4 +201,5 @@ export default {
   restrictTo,
   resetPassword,
   refresh,
+  logout,
 };

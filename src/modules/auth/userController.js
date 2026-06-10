@@ -1,7 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../shared/config/prisma.js";
 import catchAsync from "../../shared/utils/catchAsync.js";
 
-const prisma = new PrismaClient();
 
 const creatUser = catchAsync(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -34,7 +33,6 @@ const deleteUser = catchAsync(async (req, res, next) => {
 });
 
 const getAllUser = catchAsync(async (req, res, next) => {
-  console.log(req.user)
   const users = await prisma.user.findMany();
 
   res.status(200).json({
