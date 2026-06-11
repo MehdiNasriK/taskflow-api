@@ -1,9 +1,9 @@
 import prisma from "../../shared/config/prisma.js";
 import jwt from "../../shared/utils/jwt.js";
+import AppError from "../../shared/utils/error.js";
 import catchAsync from "../../shared/utils/catchAsync.js";
 import bcrypt from "bcrypt";
 import Email from "../../shared/utils/email.js";
-
 
 const signUp = catchAsync(async (req, res, next) => {
   const { email, username } = req.body;
@@ -31,7 +31,7 @@ const signUp = catchAsync(async (req, res, next) => {
 const login = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
   if (!username || !password)
-    return next(new Error("username and password required"));
+    return next(new AppError(401, "username and password required"));
 
   const user = await prisma.user.findUnique({
     where: {
@@ -40,7 +40,7 @@ const login = catchAsync(async (req, res, next) => {
   });
 
   if (!user || !(await bcrypt.compare(password, user.password)))
-    return next(new Error("invalid password or username"));
+    return next(new AppError(404, "invalid password or username"));
 
   const accessToken = jwt.createAccessToken(user.id, user.username);
   const refreshToken = jwt.createRefreshToken(user.id);
@@ -93,10 +93,10 @@ const logout = catchAsync(async (req, res, next) => {
 
 const protect = catchAsync(async (req, res, next) => {
   if (!req.headers.authorization?.startsWith("Bearer"))
-    return next(new Error("invalid token"));
+    return next(new AppError(401, "invalid token"));
 
   const accessToken = req.headers.authorization?.split(" ")[1];
-  if (!accessToken) return next(new Error("please login"));
+  if (!accessToken) return next(new AppError(401, "please login"));
 
   const { userInfo } = jwt.checkAccessToken(accessToken);
 
@@ -106,6 +106,7 @@ const protect = catchAsync(async (req, res, next) => {
     },
   });
 
+  if (!user) return next(new AppError(404, "user no longer exist"));
   req.user = user;
   next();
 });
@@ -114,7 +115,7 @@ const restrictTo = (...roles) => {
   return (req, res, next) => {
     return roles.includes(req.user.role)
       ? next()
-      : next(new Error("you are not access to this"));
+      : next(new AppError(403, "you are not access to this"));
   };
 };
 
@@ -128,7 +129,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
   });
 
   if (!(await bcrypt.compare(password, user.password)))
-    return next(new Error("password incorrect"));
+    return next(new AppError(401, "password incorrect"));
 
   const hashedPassword = await bcrypt.hash(newPassword, 12);
 
@@ -156,7 +157,7 @@ const resetPassword = catchAsync(async (req, res, next) => {
 
 const refresh = catchAsync(async (req, res, next) => {
   let refreshToken = req.cookies.jwt;
-  if (!refreshToken) return next(new Error("please login"));
+  if (!refreshToken) return next(new AppError(401, "please login"));
 
   const decoded = jwt.checkRefreshToken(refreshToken);
 
@@ -166,8 +167,9 @@ const refresh = catchAsync(async (req, res, next) => {
     },
   });
 
+  if (!user) return next(new AppError(404, "user no longer exist"));
   if (jwt.hashRefreshToken(refreshToken) !== user.refreshToken)
-    return next(new Error("token invalid"));
+    return next(new AppError(401, "invalid token"));
 
   refreshToken = jwt.createRefreshToken(user.id);
   const accessToken = jwt.createAccessToken(user.id, user.username);
