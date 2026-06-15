@@ -14,32 +14,17 @@ datasource db {
 }
 
 model User {
-  id           Int         @id @default(autoincrement())
-  username     String      @unique
-  email        String      @unique
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  email        String    @unique
   password     String
   avatar       String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   refreshToken String?
-  membership       Member[]
-}
-
-model Member {
-  username          String
-  createdTasks      Task[]      @relation("Creator")
-  assignedTasks     Task[]      @relation("Assignee")
-  createdWorkspaces Workspace[] @relation("Creator")
-  workspace         Workspace   @relation("Membership", fields: [workspaceId], references: [id])
-  workspaceId       Int
-  user              User        @relation(fields: [userId], references: [id])
-  userId            Int
-  comments          Comment[]
-  addedAt           DateTime    @default(now())
-  role              Role        @default(MEMBER)
-
-  @@id([userId, workspaceId])
-  @@unique([username, workspaceId])
+  comments     Comment[]
+  createdTasks Task[]
+  projects     Project[]
 }
 
 model Task {
@@ -49,36 +34,23 @@ model Task {
   status      Status    @default(TODO)
   priority    Priority?
   project     Project?  @relation(fields: [projectId], references: [id])
-  projectId   Int
-  assignee    Member    @relation("Assignee", fields: [assigneeId], references: [userId])
-  assigneeId  Int
-  creator     Member    @relation("Creator", fields: [creatorId], references: [userId])
+  projectId   Int?
+  creator     User      @relation(fields: [creatorId], references: [id])
   creatorId   Int
   dueDate     DateTime?
   comments    Comment[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
-}
-
-model Workspace {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique @db.VarChar(20)
-  owner     Member    @relation("Creator", fields: [ownerId], references: [userId])
-  ownerId   Int
-  members   Member[]  @relation("Membership")
-  projects  Project[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  updatedAt   DateTime @updatedAt
 }
 
 model Project {
-  id          Int       @id @default(autoincrement())
-  title       String    @db.VarChar(20)
-  workSpace   Workspace @relation(fields: [workSpaceId], references: [id])
-  workSpaceId Int
-  tasks       Task[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @updatedAt
+  id        Int       @id @default(autoincrement())
+  title     String    @db.VarChar(20)
+  tasks     Task[]
+  creator   User      @relation(fields: [creatorId], references: [id])
+  creatorId Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model Comment {
@@ -86,10 +58,10 @@ model Comment {
   content   String    @db.Text
   task      Task      @relation(fields: [taskId], references: [id])
   taskId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
-  member    Member?   @relation(fields: [memberId], references: [userId])
-  memberId  Int?
 }
 
 enum Status {
