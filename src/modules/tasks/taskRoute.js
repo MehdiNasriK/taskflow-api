@@ -1,21 +1,31 @@
 import express from "express";
 import taskController from "./taskController.js";
 import authController from "../auth/authController.js";
-import commentsController from "../comments/commentsController.js"
+import commentController from "../comments/commentController.js";
 
 const router = express.Router();
 
+router.use(authController.protect);
+
 router
   .route("/")
-  .post(authController.protect, taskController.createTask)
-  .get(authController.protect, taskController.getAllTasks)
-  .delete(authController.protect, taskController.deleteAllTask);
+  .post(taskController.createTask)
+  .get(taskController.getAllTasks);
 
 router
   .route("/:id")
-  .get(authController.protect, taskController.getTask)
-  .post(commentsController.createComment)
-  .delete(authController.protect, taskController.deleteTask)
-  .patch(authController.protect, taskController.updateTask);
+  .get(taskController.getTask)
+  .post(taskController.passTaskId, commentController.createComment)
+  .delete(taskController.deleteTask)
+  .patch(taskController.updateTask);
+
+router
+  .route("/:id/comments")
+  .get(taskController.passTaskId, commentController.getAllComments)
+
+router
+  .route("/:id/comments/:commentId")
+  .patch(commentController.updateComment)
+  .delete(commentController.deleteComment);
 
 export default router;

@@ -19,6 +19,7 @@ const createOne = (model, allowedField) => {
     if (req.taskId) reqBody.taskId = req.taskId * 1;
 
     reqBody.creatorId = req.user.id;
+    console.log(reqBody)
     const data = await prisma[model].create({
       data: reqBody,
     });
@@ -31,7 +32,7 @@ const createOne = (model, allowedField) => {
 
 const getOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    const id = req.params.id * 1;
+    const id = req.params.taskId * 1 || req.params.id * 1;
     let data;
     if (model === "project") {
       data = await prisma[model].findUnique({
@@ -49,6 +50,9 @@ const getOne = (model) => {
           id,
           creatorId: req.user.id,
         },
+        include: {
+          comments: true,
+        },
       });
     }
 
@@ -62,7 +66,9 @@ const getOne = (model) => {
 
 const deleteOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    const id = req.params.id * 1;
+    const id =
+      req.params.commentId * 1 || req.params.taskId * 1 || req.params.id * 1;
+
     await prisma[model].delete({
       where: {
         id,
@@ -89,7 +95,8 @@ const updateOne = (model, allowedField) => {
     if (Object.keys(reqBody).length === 0)
       return next(new AppError(400, "there is nothing to update"));
 
-    const id = req.params.id * 1;
+    const id =
+      req.params.commentId * 1 || req.params.taskId * 1 || req.params.id * 1;
     const data = await prisma[model].update({
       where: {
         id,
@@ -106,10 +113,13 @@ const updateOne = (model, allowedField) => {
 
 const getAll = (model) => {
   return catchAsync(async (req, res, next) => {
+    const where = {};
+    where.creatorId = req.user.id * 1;
+    where.projectId = req.projectId * 1 || undefined;
+    where.taskId = req.taskId * 1 || undefined;
+
     const data = await prisma[model].findMany({
-      where: {
-        creatorId: req.user.id,
-      },
+      where,
     });
 
     res.json({
@@ -120,10 +130,13 @@ const getAll = (model) => {
 
 const deleteAll = (model) => {
   return catchAsync(async (req, res, next) => {
+    const where = {};
+    where.creatorId = req.user.id * 1;
+    where.projectId = req.projectId * 1 || undefined;
+    where.taskId = req.taskId * 1 || undefined;
+
     await prisma[model].deleteMany({
-      where: {
-        creatorId: req.user.id,
-      },
+      where,
     });
 
     res.json({

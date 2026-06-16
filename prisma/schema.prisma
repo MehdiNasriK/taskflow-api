@@ -40,7 +40,7 @@ model Task {
   dueDate     DateTime?
   comments    Comment[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
 }
 
 model Project {
@@ -58,8 +58,8 @@ model Comment {
   content   String    @db.Text
   task      Task      @relation(fields: [taskId], references: [id])
   taskId    Int
-  user      User      @relation(fields: [userId], references: [id])
-  userId    Int
+  creator   User      @relation(fields: [creatorId], references: [id])
+  creatorId Int
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 }

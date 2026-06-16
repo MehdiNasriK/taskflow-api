@@ -1,4 +1,5 @@
 import factory from "../../shared/utils/handlerFactory.js";
+import catchAsync from "../../shared/utils/catchAsync.js"
 
 const createTask = factory.createOne("task", [
   "title",
@@ -23,15 +24,18 @@ const updateTask = factory.updateOne("task", [
   "status",
 ]);
 
-const deleteAllTask = factory.deleteAll("task");
-
 const getAllTasks = factory.getAll("task");
+
+const passTaskId = catchAsync(async(req, res, next) => {
+  req.taskId = req.params.taskId || req.params.id 
+  next()
+})
 
 export default {
   createTask,
-  deleteAllTask,
   getAllTasks,
   deleteTask,
   updateTask,
   getTask,
+  passTaskId,
 };
