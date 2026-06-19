@@ -24,7 +24,7 @@ router
 
 router
   .route("/:id/tasks")
-  .get(taskController.getAllTasks)
+  .get(projectController.passProjectId, taskController.getAllTasks);
 
 router
   .route("/:id/tasks/:taskId")
@@ -35,11 +35,11 @@ router
 
 router
   .route("/:id/tasks/:taskId/comments")
-  .get(taskController.passTaskId, commentController.getAllComments)
+  .get(taskController.passTaskId, commentController.getAllComments);
 
 router
   .route("/:id/tasks/:taskId/comments/:commentId")
   .patch(commentController.updateComment)
-  .delete(commentController.deleteComment)
+  .delete(commentController.deleteComment);
 
 export default router;

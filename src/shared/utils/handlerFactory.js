@@ -1,6 +1,7 @@
 import catchAsync from "./catchAsync.js";
 import prisma from "../config/prisma.js";
 import AppError from "../../shared/utils/error.js";
+import ApiFeature from "./apiFeature.js";
 
 const createOne = (model, allowedField) => {
   return catchAsync(async (req, res, next) => {
@@ -19,9 +20,19 @@ const createOne = (model, allowedField) => {
     if (req.taskId) reqBody.taskId = req.taskId * 1;
 
     reqBody.creatorId = req.user.id;
-    console.log(reqBody)
     const data = await prisma[model].create({
       data: reqBody,
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        action: `create_${model.toUpperCase()}`,
+        entityType: model.toUpperCase(),
+        entityId: data.id,
+        userId: req.user.id,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      },
     });
 
     res.json({
@@ -69,10 +80,21 @@ const deleteOne = (model) => {
     const id =
       req.params.commentId * 1 || req.params.taskId * 1 || req.params.id * 1;
 
-    await prisma[model].delete({
+    const data = await prisma[model].delete({
       where: {
         id,
         creatorId: req.user.id,
+      },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        action: `DELETE_${model.toUpperCase()}`,
+        entityType: model.toUpperCase(),
+        entityId: data.id,
+        ipAddress: req.ip,
+        userAgent: req.headers["user_agent"],
+        userId: req.user.id,
       },
     });
 
@@ -97,12 +119,31 @@ const updateOne = (model, allowedField) => {
 
     const id =
       req.params.commentId * 1 || req.params.taskId * 1 || req.params.id * 1;
+    const oldData = await prisma[model].findUnique({
+      where: {
+        id,
+        creatorId: req.user.id,
+      },
+    });
     const data = await prisma[model].update({
       where: {
         id,
         creatorId: req.user.id,
       },
       data: reqBody,
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        action: `UPDATE_${model.toUpperCase()}`,
+        entityType: model.toUpperCase(),
+        entityId: data.id,
+        oldData,
+        newData: data,
+        ipAddress: req.ip,
+        userAgent: req.headers["user_agent"],
+        userId: req.user.id,
+      },
     });
 
     res.json({
@@ -113,14 +154,19 @@ const updateOne = (model, allowedField) => {
 
 const getAll = (model) => {
   return catchAsync(async (req, res, next) => {
-    const where = {};
-    where.creatorId = req.user.id * 1;
-    where.projectId = req.projectId * 1 || undefined;
-    where.taskId = req.taskId * 1 || undefined;
+    const queryObject = new ApiFeature(req.query)
+      .filter()
+      .search()
+      .sort()
+      .pagination()
+      .build();
 
-    const data = await prisma[model].findMany({
-      where,
-    });
+    console.log(queryObject);
+    queryObject.where.creatorId = req.user.id * 1;
+    queryObject.where.projectId = req.projectId * 1 || undefined;
+    queryObject.where.taskId = req.taskId * 1 || undefined;
+
+    const data = await prisma[model].findMany(queryObject);
 
     res.json({
       data,
@@ -135,8 +181,18 @@ const deleteAll = (model) => {
     where.projectId = req.projectId * 1 || undefined;
     where.taskId = req.taskId * 1 || undefined;
 
-    await prisma[model].deleteMany({
+    const data = await prisma[model].deleteMany({
       where,
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        action: `DELETE_${model.toUpperCase()}`,
+        entityType: model.toUpperCase(),
+        ipAddress: req.ip,
+        userAgent: req.headers["user_agent"],
+        userId: req.user.id,
+      },
     });
 
     res.json({
