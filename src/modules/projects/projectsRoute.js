@@ -3,6 +3,10 @@ import authController from "../auth/authController.js";
 import projectController from "./projectController.js";
 import taskController from "../tasks/taskController.js";
 import commentController from "../comments/commentController.js";
+import { projectSchema } from "./projectSchema.js";
+import { validation } from "../../shared/utils/validation.js";
+import { taskSchema } from "../tasks/taskSchema.js";
+import { commentSchema } from "../comments/commentSchema.js";
 
 const router = express.Router();
 
@@ -11,15 +15,18 @@ router.use(authController.protect);
 router
   .route("/")
   .get(projectController.getAllProject)
-  .post(projectController.createProject)
-  .patch(projectController.updateProject)
+  .post(validation(projectSchema), projectController.createProject)
   .delete(projectController.deleteProject);
 
 router
   .route("/:id")
-  .post(projectController.passProjectId, taskController.createTask)
+  .post(
+    projectController.passProjectId,
+    validation(taskSchema),
+    taskController.createTask,
+  )
   .get(projectController.getProject)
-  .patch(projectController.updateProject)
+  .patch(validation(projectSchema), projectController.updateProject)
   .delete(projectController.deleteProject);
 
 router
@@ -29,8 +36,12 @@ router
 router
   .route("/:id/tasks/:taskId")
   .get(taskController.getTask)
-  .post(taskController.passTaskId, commentController.createComment)
-  .patch(taskController.updateTask)
+  .post(
+    taskController.passTaskId,
+    validation(commentSchema),
+    commentController.createComment,
+  )
+  .patch(validation(taskSchema), taskController.updateTask)
   .delete(taskController.deleteTask);
 
 router
@@ -39,7 +50,7 @@ router
 
 router
   .route("/:id/tasks/:taskId/comments/:commentId")
-  .patch(commentController.updateComment)
+  .patch(validation(commentSchema), commentController.updateComment)
   .delete(commentController.deleteComment);
 
 export default router;

@@ -161,7 +161,6 @@ const getAll = (model) => {
       .pagination()
       .build();
 
-    console.log(queryObject);
     queryObject.where.creatorId = req.user.id * 1;
     queryObject.where.projectId = req.projectId * 1 || undefined;
     queryObject.where.taskId = req.taskId * 1 || undefined;

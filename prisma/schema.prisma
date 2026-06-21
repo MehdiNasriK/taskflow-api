@@ -30,8 +30,8 @@ model User {
 
 model Task {
   id          Int       @id @default(autoincrement())
-  description String?
-  title       String
+  description String?   @db.VarChar(100)
+  title       String    @db.VarChar(50)
   status      Status    @default(TODO)
   priority    Priority?
   project     Project?  @relation(fields: [projectId], references: [id])
@@ -46,7 +46,7 @@ model Task {
 
 model Project {
   id        Int       @id @default(autoincrement())
-  title     String    @db.VarChar(20)
+  title     String    @db.VarChar(50)
   tasks     Task[]
   creator   User      @relation(fields: [creatorId], references: [id])
   creatorId Int

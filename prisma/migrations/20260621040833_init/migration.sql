@@ -24,8 +24,8 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Task" (
     "id" SERIAL NOT NULL,
-    "description" TEXT,
-    "title" TEXT NOT NULL,
+    "description" VARCHAR(100),
+    "title" VARCHAR(50) NOT NULL,
     "status" "Status" NOT NULL DEFAULT 'TODO',
     "priority" "Priority",
     "projectId" INTEGER,
@@ -40,7 +40,7 @@ CREATE TABLE "Task" (
 -- CreateTable
 CREATE TABLE "Project" (
     "id" SERIAL NOT NULL,
-    "title" VARCHAR(20) NOT NULL,
+    "title" VARCHAR(50) NOT NULL,
     "creatorId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3),

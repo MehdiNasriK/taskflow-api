@@ -1,10 +1,12 @@
 import express from "express";
 import authController from "./authController.js";
+import {signUpSchema, loginSchema} from "./authValidation.js";
+import { validation } from "../../shared/utils/validation.js";
 
 const router = express.Router();
 
-router.route("/signup").post(authController.signUp);
-router.route("/login").post(authController.login);
+router.route("/signup").post(validation(signUpSchema), authController.signUp);
+router.route("/login").post(validation(loginSchema), authController.login);
 router.route("/logout").get(authController.protect, authController.logout);
 
 router
