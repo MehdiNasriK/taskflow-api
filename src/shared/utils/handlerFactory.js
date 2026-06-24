@@ -2,6 +2,7 @@ import catchAsync from "./catchAsync.js";
 import prisma from "../config/prisma.js";
 import AppError from "../../shared/utils/error.js";
 import ApiFeature from "./apiFeature.js";
+import { redis } from "../config/redis.js";
 
 const createOne = (model, allowedField) => {
   return catchAsync(async (req, res, next) => {
@@ -44,8 +45,12 @@ const createOne = (model, allowedField) => {
 const getOne = (model) => {
   return catchAsync(async (req, res, next) => {
     const id = req.params.taskId * 1 || req.params.id * 1;
+
+    const redisKey = `${model}id:${id}`;
     let data;
-    if (model === "project") {
+    const redisData = await redis.get(redisKey);
+    data = JSON.parse(redisData);
+    if (model === "project" && !data) {
       data = await prisma[model].findUnique({
         where: {
           id,
@@ -55,7 +60,8 @@ const getOne = (model) => {
           tasks: true,
         },
       });
-    } else {
+      redis.setEx(redisKey, 60, JSON.stringify(data));
+    } else if (!data) {
       data = await prisma[model].findUnique({
         where: {
           id,
@@ -65,9 +71,10 @@ const getOne = (model) => {
           comments: true,
         },
       });
+      redis.setEx(redisKey, 60, JSON.stringify(data));
     }
 
-    if (!data) return next(new AppError(404, `${task} no longer exist`));
+    if (!data) return next(new AppError(404, `${model} no longer exist`));
 
     res.json({
       data,
@@ -161,12 +168,20 @@ const getAll = (model) => {
       .pagination()
       .build();
 
+    console.log(queryObject)
+    const redisKey = `${Object.values(req.query).join(":") || "all"}:${model}:${req.user.id}:${req.projectId || "none"}:${req.taskId || "none"}`;
+    console.log(redisKey)
     queryObject.where.creatorId = req.user.id * 1;
     queryObject.where.projectId = req.projectId * 1 || undefined;
     queryObject.where.taskId = req.taskId * 1 || undefined;
 
-    const data = await prisma[model].findMany(queryObject);
-
+    let data;
+    const redisData = await redis.get(redisKey);
+    if (redisData) data = JSON.parse(redisData);
+    if (!redisData) {
+      data = await prisma[model].findMany(queryObject);
+      await redis.setEx(redisKey, 5 * 60, JSON.stringify(data));
+    }
     res.json({
       data,
     });
