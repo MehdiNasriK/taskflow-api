@@ -28,7 +28,7 @@ export default class Email {
     });
   }
 
-  sendEmail() {
+  async sendEmail() {
     const mailOption = {
       to: this.to,
       from: this.from,

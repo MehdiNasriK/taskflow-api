@@ -168,20 +168,19 @@ const getAll = (model) => {
       .pagination()
       .build();
 
-    console.log(queryObject)
-    const redisKey = `${Object.values(req.query).join(":") || "all"}:${model}:${req.user.id}:${req.projectId || "none"}:${req.taskId || "none"}`;
-    console.log(redisKey)
-    queryObject.where.creatorId = req.user.id * 1;
-    queryObject.where.projectId = req.projectId * 1 || undefined;
-    queryObject.where.taskId = req.taskId * 1 || undefined;
-
     let data;
+    const redisKey = `${Object.entries(req.query).join(":") || "all"}:${model}:${req.user.id}:${req.projectId || "none"}:${req.taskId || "none"}`;
     const redisData = await redis.get(redisKey);
     if (redisData) data = JSON.parse(redisData);
+
     if (!redisData) {
+      queryObject.where.creatorId = req.user.id * 1;
+      queryObject.where.projectId = req.projectId * 1 || undefined;
+      queryObject.where.taskId = req.taskId * 1 || undefined;
       data = await prisma[model].findMany(queryObject);
       await redis.setEx(redisKey, 5 * 60, JSON.stringify(data));
     }
+
     res.json({
       data,
     });

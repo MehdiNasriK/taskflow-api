@@ -3,7 +3,7 @@ import jwt from "../../shared/utils/jwt.js";
 import AppError from "../../shared/utils/error.js";
 import catchAsync from "../../shared/utils/catchAsync.js";
 import bcrypt from "bcrypt";
-import Email from "../../shared/utils/email.js";
+import emailQueue from "../../shared/utils/queueWorker.js"
 
 const signUp = catchAsync(async (req, res, next) => {
   const { email, username } = req.body;
@@ -20,7 +20,10 @@ const signUp = catchAsync(async (req, res, next) => {
 
   const url = `${req.protocol}://${req.get("host")}/me`;
 
-  // await new Email(url, user).sendEmail();
+  await emailQueue.add("email", {
+    url,
+    user,
+  })
 
   res.status(200).json({
     status: "success",
