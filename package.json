@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "nodemon src/server.js",
-    "debug": "ndb src/server.js"
+    "debug": "ndb src/server.js",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +27,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.9.1",
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.9"
   }
 }

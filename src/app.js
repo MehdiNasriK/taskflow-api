@@ -8,9 +8,9 @@ import projectRoutes from "./modules/projects/projectsRoute.js";
 import { redis } from "./shared/config/redis.js";
 import { rateLimiter } from "./shared/utils/rateLimiting.js";
 
-const app = express();
 
 redis.connect();
+const app = express()
 app.set("trust proxy", 1);
 
 app.use(express.json());
