@@ -32,6 +32,7 @@ const signUp = catchAsync(async (req, res, next) => {
 });
 
 const login = catchAsync(async (req, res, next) => {
+
   const { username, password } = req.body;
   if (!username || !password)
     return next(new AppError(401, "username and password required"));
