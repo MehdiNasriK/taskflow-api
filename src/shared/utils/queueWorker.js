@@ -4,7 +4,7 @@ import Email from "./email.js";
 export default new Queue("email", {
   connection: {
     host: "localhost",
-    port: 6379,
+    port: 6380,
   },
 });
 
@@ -16,7 +16,7 @@ new Worker(
   {
     connection: {
       host: "localhost",
-      port: 6379,
+      port: 6380,
     },
   },
 );

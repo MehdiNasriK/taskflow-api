@@ -20,10 +20,10 @@ const signUp = catchAsync(async (req, res, next) => {
 
   const url = `${req.protocol}://${req.get("host")}/me`;
 
-  await emailQueue.add("email", {
-    url,
-    user,
-  })
+  // await emailQueue.add("email", {
+  //   url,
+  //   user,
+  // })
 
   res.status(200).json({
     status: "success",
