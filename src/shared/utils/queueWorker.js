@@ -3,8 +3,8 @@ import Email from "./email.js";
 
 export default new Queue("email", {
   connection: {
-    host: "localhost",
-    port: 6380,
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT,
   },
 });
 
@@ -15,8 +15,8 @@ new Worker(
   },
   {
     connection: {
-      host: "localhost",
-      port: 6380,
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
     },
   },
 );
