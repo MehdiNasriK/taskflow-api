@@ -103,40 +103,40 @@ The project can be run using Docker Compose with separate containers for:
 - Redis
 The application container runs Prisma migrations before starting the server.
 
-🛠 Tech Stack
+## 🛠 Tech Stack
 
-Backend
+### #Backend
 - Node.js
 - Express
 - JavaScript (ES Modules)
 
-Database
+### #Database
 - PostgreSQL
 - Prisma ORM
 
-Authentication & Security
+### #Authentication & Security
 - JSON Web Tokens
 - bcrypt
 - HTTP-only cookies
 - Zod validation
 - Redis rate limiting
 
-Infrastructure
+### #Infrastructure
 - Redis
 - BullMQ
 - Docker
 - Docker Compose
 
-Testing
+### #Testing
 - Vitest
 - Supertest
 
-Email
+### #Email
 - Nodemailer
 - SendGrid-compatible production transport
 - SMTP development transport
 
-# 🏗 Project Structure
+## 🏗 Project Structure
 The project follows a modular structure:
 ```text
 src/
@@ -163,7 +163,7 @@ Dockerfile
 docker-compose.yml
 ``` 
 
-# 🔐 Authentication Flow
+## 🔐 Authentication Flow
 TaskFlow uses separate access and refresh tokens.
 Login
 ```text
@@ -186,7 +186,7 @@ Client
 Access tokens are used to authenticate API requests, while refresh tokens are used to obtain new access tokens.
 Refresh tokens are hashed before being persisted, so the raw token is not stored in the database.
 
-# ⚡ Caching
+## ⚡ Caching
 Frequently accessed resources can be cached in Redis.
 The API also invalidates relevant cache entries after create, update, and delete operations.
 Example:
@@ -206,12 +206,12 @@ Check Redis
        Return response
 ``` 
 
-# 🚦 Rate Limiting
+## 🚦 Rate Limiting
 The API implements IP-based rate limiting using Redis.
 General API requests are rate limited, while authentication endpoints such as login use a stricter limit.
 This helps reduce brute-force attempts and excessive requests.
 
-# 🔎 API Query Features
+## 🔎 API Query Features
 List endpoints support common query operations such as:
 Filtering
 ```text
@@ -232,7 +232,7 @@ Pagination
 The query-building logic is encapsulated in a reusable ApiFeature utility.
 
 
-# 📦 Background Jobs
+## 📦 Background Jobs
 BullMQ is used to process asynchronous jobs.
 For example, email delivery can be moved out of the request lifecycle:
 ```text
@@ -245,10 +245,10 @@ A separate worker consumes the job and sends the email.
 This pattern allows potentially slow operations to be processed asynchronously.
 
 
-# 🗄️ Database Design
+## 🗄️ Database Design
 The database is managed using Prisma migrations and PostgreSQL.
 
-# 🧪 Running Tests
+## 🧪 Running Tests
 Install dependencies:
 ```text
 npm install
@@ -258,7 +258,7 @@ Run the test suite:
 npm test
 ```
 
-# 🚀 Getting Started
+## 🚀 Getting Started
 Prerequisites
 You can run the project locally with:
 - Node.js
@@ -283,7 +283,7 @@ http://localhost:3000
 ```
 
 
-# 🐳 Running with Docker
+## 🐳 Running with Docker
 Start the application and its dependencies:
 ```text
 docker compose up --build
@@ -298,7 +298,7 @@ Node.js API
 ```
 The application container also runs the Prisma migrations before starting the server.
 
-# 📚 What I Learned
+## 📚 What I Learned
 This project was an opportunity to move beyond basic CRUD APIs and work with several backend concepts in a single application.
 Some of the main areas I explored were:
 - Designing REST APIs with Express
@@ -321,7 +321,7 @@ Some of the main areas I explored were:
 - Dockerized local development
 - Database migrations
 
-# 🔮 Possible Improvements
+## 🔮 Possible Improvements
 There are several areas that could be improved if the project were taken further toward production use.
 Potential improvements include:
 - More comprehensive test coverage
@@ -334,7 +334,7 @@ Potential improvements include:
 - Improved production configuration and secret management
 - More extensive integration and end-to-end tests
 
-# 📌 Project Status
+## 📌 Project Status
 This is an evolving portfolio project.
 The primary goal was to gain hands-on experience with backend architecture and infrastructure concepts while building a realistic API rather than focusing only on basic CRUD functionality.
 
