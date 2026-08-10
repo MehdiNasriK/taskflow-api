@@ -1,0 +1,6 @@
+/node_modules
+/.env
+/.env.*
+/jj.js
+/.gitignore
+/.git

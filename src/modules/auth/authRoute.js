@@ -1,0 +1,21 @@
+import express from "express";
+import authController from "./authController.js";
+import { signUpSchema, loginSchema } from "./authValidation.js";
+import { validation } from "../../shared/utils/validation.js";
+import { rateLimiter } from "../../shared/utils/rateLimiting.js";
+
+const router = express.Router();
+
+router.route("/signup").post(validation(signUpSchema), authController.signUp);
+router
+  .route("/login")
+  .post(rateLimiter(5, 600), validation(loginSchema), authController.login);
+router.route("/logout").post(authController.protect, authController.logout);
+
+router
+  .route("/resetpassword")
+  .post(authController.protect, authController.resetPassword);
+
+router.route("/refreshtoken").get(authController.refresh);
+
+export default router;
