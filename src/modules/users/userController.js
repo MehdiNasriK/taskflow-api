@@ -4,12 +4,15 @@ import AppError from "../../shared/utils/error.js";
 
 
 const creatUser = catchAsync(async (req, res, next) => {
-  const { username, email, password } = req.body;
+  const { username, email } = req.body;
+  let { password } = req.body;
 
   if(!username) return next(new AppError(400, "please enter the username"))
   if(!email) return next(new AppError(400, "please enter the email"))
   if(!password) return next(new AppError(400, "please enter the password"))
 
+  password = await bcrypt.hash(password, 12);
+  
   const user = await prisma.user.create({
     data: {
       username,

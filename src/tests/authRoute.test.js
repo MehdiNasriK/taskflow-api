@@ -27,8 +27,6 @@ import emailQueue from "../shared/utils/queueWorker.js";
 import bcrypt from "bcrypt";
 
 describe("signup", () => {
-  beforeEach(() => {});
-
   it("sould validate input, hash password, create user, add email in Queue, response", async () => {
     emailQueue.add.mockResolvedValue();
     prisma.user.create.mockResolvedValue({

@@ -4,26 +4,24 @@ import AppError from "../../shared/utils/error.js";
 import ApiFeature from "./apiFeature.js";
 import { redis } from "../config/redis.js";
 
-const createOne = (model, allowedField) => {
+const createOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    const reqBody = req.body;
-    const keyBody = Object.keys(reqBody);
-    const includeKey = allowedField;
-
-    keyBody.forEach((el) => {
-      if (!includeKey.includes(el)) delete reqBody[el];
-    });
-
-    if (Object.keys(reqBody).length === 0)
+    if (Object.keys(req.body).length === 0)
       return next(new AppError(400, "no data for creating"));
 
-    if (req.projectId) reqBody.projectId = req.projectId * 1;
-    if (req.taskId) reqBody.taskId = req.taskId * 1;
+    if (req.projectId) req.body.projectId = req.projectId * 1;
+    if (req.taskId) req.body.taskId = req.taskId * 1;
 
-    reqBody.creatorId = req.user.id;
+    req.body.creatorId = req.user.id;
     const data = await prisma[model].create({
-      data: reqBody,
+      data: req.body,
     });
+
+    const keys = await redis.keys(`*${model}*`);
+    while (keys.length > 0) {
+      await redis.del(keys[0]);
+      keys.shift();
+    }
 
     await prisma.activityLog.create({
       data: {
@@ -49,7 +47,7 @@ const getOne = (model) => {
     const redisKey = `${model}id:${id}`;
     let data;
     const redisData = await redis.get(redisKey);
-    data = JSON.parse(redisData);
+    if(data) data = JSON.parse(redisData);
     if (model === "project" && !data) {
       data = await prisma[model].findUnique({
         where: {
@@ -94,6 +92,12 @@ const deleteOne = (model) => {
       },
     });
 
+    const keys = await redis.keys(`*${model}*`);
+    while (keys.length > 0) {
+      await redis.del(keys[0]);
+      keys.shift();
+    }
+
     await prisma.activityLog.create({
       data: {
         action: `DELETE_${model.toUpperCase()}`,
@@ -111,17 +115,9 @@ const deleteOne = (model) => {
   });
 };
 
-const updateOne = (model, allowedField) => {
+const updateOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    const reqBody = req.body;
-    const keyBody = Object.keys(reqBody);
-    const allowedKey = allowedField;
-
-    keyBody.forEach((el) => {
-      if (!allowedKey.includes(el)) delete reqBody[el];
-    });
-
-    if (Object.keys(reqBody).length === 0)
+    if (Object.keys(req.body).length === 0)
       return next(new AppError(400, "there is nothing to update"));
 
     const id =
@@ -137,8 +133,14 @@ const updateOne = (model, allowedField) => {
         id,
         creatorId: req.user.id,
       },
-      data: reqBody,
+      data: req.body,
     });
+
+    const keys = await redis.keys(`*${model}*`);
+    while (keys.length > 0) {
+      await redis.del(keys[0]);
+      keys.shift();
+    }
 
     await prisma.activityLog.create({
       data: {
