@@ -259,7 +259,6 @@ npm test
 ```
 
 ## 🚀 Getting Started
-Prerequisites
 You can run the project locally with:
 - Node.js
 - PostgreSQL
