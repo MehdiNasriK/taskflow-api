@@ -8,7 +8,7 @@ TaskFlow provides authentication, project and task management, comments, caching
 
 ---
 
-## ✨ Features
+## ✨Features
 
 ### Authentication & Authorization
 
